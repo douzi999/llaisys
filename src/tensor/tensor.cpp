@@ -218,8 +218,22 @@ tensor_t Tensor::view(const std::vector<size_t> &shape) const {
 }
 
 tensor_t Tensor::slice(size_t dim, size_t start, size_t end) const {
-    // TO_BE_IMPLEMENTED();
-    return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
+    if (dim >= this->ndim()){
+        throw std::runtime_error("slice: dim out of range");
+    }
+    if (start > end || end > this->shape()[dim]){
+        throw std::runtime_error("slice: slice out of range");
+    }
+    std::vector<size_t> new_shape = _meta.shape;
+    new_shape[dim] = end - start;
+    size_t new_offset = _offset + start * _meta.strides[dim] * this->elementSize();
+    std::vector<ptrdiff_t> new_strides = _meta.strides;
+    TensorMeta new_meta = {
+        .dtype = _meta.dtype,
+        .shape = new_shape,
+        .strides = new_strides,
+    };
+    return std::shared_ptr<Tensor>(new Tensor(new_meta, _storage,new_offset));
 }
 
 void Tensor::load(const void *src_) {
