@@ -164,41 +164,94 @@ void Tensor::debug() const {
 }
 
 bool Tensor::isContiguous() const {
-    TO_BE_IMPLEMENTED();
+    ptrdiff_t expected_stride = 1;
+    size_t ndim = this->ndim();
+    for (int dim = ndim - 1; dim >= 0; --dim){
+        if (_meta.strides[dim] != expected_stride){
+            return false;
+        }
+        expected_stride *= _meta.shape[dim];
+    }
     return true;
 }
 
 tensor_t Tensor::permute(const std::vector<size_t> &order) const {
-    TO_BE_IMPLEMENTED();
-    return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
+    size_t ndim = this->ndim();
+    if (order.size() != ndim){
+        throw std::runtime_error("permute: order size does not match");
+    }
+    std::vector<size_t> new_shape(ndim);
+    for (size_t i = 0; i < ndim; ++i){
+        new_shape[i] = _meta.shape[order[i]];
+    }
+    std::vector<ptrdiff_t> new_strides(ndim);
+    for (size_t i = 0; i < ndim; ++i){
+        new_strides[i] = _meta.strides[order[i]];
+    }
+    TensorMeta new_meta = {
+        .dtype = _meta.dtype,
+        .shape = new_shape,
+        .strides = new_strides,
+    };
+    return std::shared_ptr<Tensor>(new Tensor(new_meta, _storage));
 }
 
 tensor_t Tensor::view(const std::vector<size_t> &shape) const {
-    TO_BE_IMPLEMENTED();
-    return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
+    if (!this->isContiguous()){
+        throw std::runtime_error("view: tensor is not contiguous");
+    }
+    size_t new_numel = std::accumulate(shape.begin(), shape.end(), size_t(1), std::multiplies<size_t>());
+    if (new_numel != this->numel()){
+        throw std::runtime_error("view: new number of elements does not match");
+    }
+    std::vector<ptrdiff_t> new_strides(shape.size());
+    new_strides[shape.size() - 1] = 1;
+    for (int i = (int)shape.size() - 2; i >= 0; --i){
+        new_strides[i] = new_strides[i + 1] * shape[i + 1];
+    }
+    TensorMeta new_meta = {
+        .dtype = _meta.dtype,
+        .shape = shape,
+        .strides = new_strides,
+    };
+    return std::shared_ptr<Tensor>(new Tensor(new_meta, _storage));
 }
 
 tensor_t Tensor::slice(size_t dim, size_t start, size_t end) const {
-    TO_BE_IMPLEMENTED();
+    // TO_BE_IMPLEMENTED();
     return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
 }
 
 void Tensor::load(const void *src_) {
-    TO_BE_IMPLEMENTED();
+    if (src_ == nullptr){
+        throw std::runtime_error("load: source pointer is null");
+    }
+    size_t total_bytes = this->numel() * this->elementSize();
+    if (this->deviceType() == LLAISYS_DEVICE_CPU) {
+        std::memcpy(this->data(), src_, total_bytes);
+    } else {
+        core::context().setDevice(this->deviceType(), this->deviceId());
+        core::context().runtime().api()->memcpy_sync(
+            this->data(),
+            src_,
+            total_bytes,
+            LLAISYS_MEMCPY_H2D);
+        core::context().runtime().api()->device_synchronize();
+    }
 }
 
 tensor_t Tensor::contiguous() const {
-    TO_BE_IMPLEMENTED();
+    // TO_BE_IMPLEMENTED();
     return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
 }
 
 tensor_t Tensor::reshape(const std::vector<size_t> &shape) const {
-    TO_BE_IMPLEMENTED();
+    // TO_BE_IMPLEMENTED();
     return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
 }
 
 tensor_t Tensor::to(llaisysDeviceType_t device_type, int device) const {
-    TO_BE_IMPLEMENTED();
+    // TO_BE_IMPLEMENTED();
     return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
 }
 

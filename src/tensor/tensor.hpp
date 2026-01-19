@@ -27,16 +27,16 @@ public:
         int device = 0);
     ~Tensor() = default;
     // Info
-    std::byte *data();
+    std::byte *data();   // “写数据”的起始地址 
     const std::byte *data() const;
     size_t ndim() const;
     const std::vector<size_t> &shape() const;
     const std::vector<ptrdiff_t> &strides() const;
     llaisysDataType_t dtype() const;
-    llaisysDeviceType_t deviceType() const;
+    llaisysDeviceType_t deviceType() const;   // tensor 在 CPU 还是 GPU
     int deviceId() const;
-    size_t numel() const;
-    size_t elementSize() const;
+    size_t numel() const;   // tensor 逻辑上有多少个元素
+    size_t elementSize() const;   // 一个元素占多少字节
 
     std::string info() const;
     void debug() const;
