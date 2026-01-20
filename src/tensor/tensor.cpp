@@ -1,6 +1,7 @@
 #include "tensor.hpp"
 
 #include "../utils.hpp"
+#include "../ops/rearrange/op.hpp"
 
 #include <cstring>
 #include <numeric>
@@ -255,8 +256,13 @@ void Tensor::load(const void *src_) {
 }
 
 tensor_t Tensor::contiguous() const {
-    // TO_BE_IMPLEMENTED();
-    return std::shared_ptr<Tensor>(new Tensor(_meta, _storage));
+    if (this->isContiguous()) {
+        return std::shared_ptr<Tensor>(new Tensor(_meta, _storage, _offset));
+    }
+
+    auto out = Tensor::create(_meta.shape, _meta.dtype, this->deviceType(), this->deviceId());
+    llaisys::ops::rearrange(out, std::shared_ptr<Tensor>(new Tensor(_meta, _storage, _offset)));
+    return out;
 }
 
 tensor_t Tensor::reshape(const std::vector<size_t> &shape) const {
